@@ -16,15 +16,17 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 
 	var (
 		totalAmount float64
+		response    models.CreateOrderRequest
+		orderItem   models.OrderItem
 	)
 
-	for _, v := range request.OrderItem {
+	for i, v := range request.OrderItem {
 		product, err := u.Options.Repository.Product.GetDetailProduct(ctx, v.ProductId)
 		if err != nil {
 			return models.CreateOrderRequest{}, err
 		}
 
-		v.UnitPrice = product.Price
+		request.OrderItem[i].UnitPrice = product.Price
 		totalAmount = totalAmount + product.Price
 	}
 	now := time.Now()
@@ -51,16 +53,29 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 		v.CreatedAt = now
 		v.UpdatedAt = now
 
-		orderItem, err := u.Options.Repository.OrderItem.CreatOrderItem(tx, v)
+		orderItem, err = u.Options.Repository.OrderItem.CreatOrderItem(tx, v)
 		if err != nil {
 			tx.Rollback()
 			return models.CreateOrderRequest{}, err
 		}
+		response.OrderItem = append(response.OrderItem, orderItem)
 
-		v = orderItem
+		resvStockReq := models.ReservedStock{
+			OrderItemId:           orderItem.OrderItemId,
+			ProductId:             v.ProductId,
+			ReservedQuantity:      v.Quantity,
+			ReservationExpiryTime: order.PaymentDeadline,
+			CreatedAt:             now,
+			UpdatedAt:             now,
+		}
+		_, err = u.Options.Repository.ReservedStock.CreatReservedStock(tx, resvStockReq)
+		if err != nil {
+			tx.Rollback()
+			return models.CreateOrderRequest{}, err
+		}
 	}
 
 	tx.Commit()
-	request.Order = order
-	return request, nil
+	response.Order = order
+	return response, nil
 }

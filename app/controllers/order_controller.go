@@ -48,14 +48,15 @@ func (c *orderController) Create(ctx echo.Context) error {
 		return helpers.StandardResponse(ctx, customError.GetStatusCode(err), []string{err.Error()}, nil, nil)
 	}
 
-	// err = c.Options.UseCases.Validate.IsValidCreateOrders(ctx.Request().Context(), mapReq)
-	// if err != nil {
-	// 	return helpers.StandardResponse(ctx, customError.GetStatusCode(err), []string{err.Error()}, nil, nil)
-	// }
-	// order, err = c.Options.UseCases.Order.CreateOrder(order)
-	// if err != nil {
-	// 	return helpers.StandardResponse(ctx, customError.GetStatusCode(err), []string{err.Error()}, nil, nil)
-	// }
+	err = c.Options.UseCases.Validate.IsValidCreateOrder(ctx.Request().Context(), reqBody)
+	if err != nil {
+		return helpers.StandardResponse(ctx, customError.GetStatusCode(err), []string{err.Error()}, nil, nil)
+	}
+
+	reqBody, err = c.Options.UseCases.Order.CreateOrder(ctx.Request().Context(), reqBody)
+	if err != nil {
+		return helpers.StandardResponse(ctx, customError.GetStatusCode(err), []string{err.Error()}, nil, nil)
+	}
 
 	return helpers.StandardResponse(ctx, http.StatusCreated, []string{constants.SUCCESS_RESPONSE_MESSAGE}, reqBody, nil)
 }

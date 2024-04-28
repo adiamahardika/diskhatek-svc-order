@@ -7,9 +7,11 @@ import (
 )
 
 type Main struct {
-	Order     OrderRepository
-	OrderItem OrderItemRepository
-	Product   ProductRepository
+	Order         OrderRepository
+	OrderItem     OrderItemRepository
+	Product       ProductRepository
+	ReservedStock ReservedStockRepository
+	User          UserRepository
 }
 
 type repository struct {
@@ -25,9 +27,11 @@ func Init(opts Options) *Main {
 	repo := &repository{opts}
 
 	m := &Main{
-		Order:     (*orderRepository)(repo),
-		OrderItem: (*orderItemRepository)(repo),
-		Product:   (*productRepository)(repo),
+		Order:         (*orderRepository)(repo),
+		OrderItem:     (*orderItemRepository)(repo),
+		Product:       (*productRepository)(repo),
+		ReservedStock: (*reservedStockRepository)(repo),
+		User:          (*userRepository)(repo),
 	}
 
 	return m

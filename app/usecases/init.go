@@ -8,7 +8,8 @@ import (
 )
 
 type Main struct {
-	Order OrderUsecase
+	Order    OrderUsecase
+	Validate ValidateUsecase
 }
 
 type usecase struct {
@@ -25,7 +26,8 @@ func Init(opts Options) *Main {
 	uscs := &usecase{opts}
 
 	m := &Main{
-		Order: (*orderUsecase)(uscs),
+		Order:    (*orderUsecase)(uscs),
+		Validate: (*validateUsecase)(uscs),
 	}
 
 	return m

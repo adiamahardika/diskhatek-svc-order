@@ -2,12 +2,11 @@ package models
 
 import "time"
 
-type OrderItem struct {
-	OrderItemId int       `json:"order_item_id" gorm:"primaryKey"`
-	OrderId     int       `json:"order_id"`
+type Stock struct {
+	StockId     int       `json:"stock_id" gorm:"primaryKey"`
 	ProductId   int       `json:"product_id"`
+	WarehouseId int       `json:"warehouse_id"`
 	Quantity    int       `json:"quantity"`
-	UnitPrice   float64   `json:"unit_price"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
