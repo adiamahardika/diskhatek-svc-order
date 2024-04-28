@@ -37,7 +37,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 		TotalAmount:     totalAmount,
 		Status:          "pending",
 		OrderDate:       now,
-		PaymentDeadline: now.Add(5 * time.Minute),
+		PaymentDeadline: now.Add(10 * time.Minute),
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
