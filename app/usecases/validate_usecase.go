@@ -10,6 +10,7 @@ type validateUsecase usecase
 
 type ValidateUsecase interface {
 	IsValidCreateOrder(ctx context.Context, request models.CreateOrderRequest) error
+	IsValidPayment(ctx context.Context, request models.CreateOrderRequest) error
 }
 
 func (u *validateUsecase) IsValidCreateOrder(ctx context.Context, request models.CreateOrderRequest) error {
@@ -33,6 +34,22 @@ func (u *validateUsecase) IsValidCreateOrder(ctx context.Context, request models
 		if v.Quantity > product.AvailableStock {
 			return customErrors.NewBadRequestErrorf("Insufficient stock available for product id %d", v.ProductId)
 		}
+	}
+
+	return nil
+}
+
+func (u *validateUsecase) IsValidPayment(ctx context.Context, request models.CreateOrderRequest) error {
+
+	order, err := u.Options.Repository.Order.GetOrderDetail(ctx, request.OrderId)
+	if err != nil {
+		return customErrors.NewInternalServiceError(err.Error())
+	}
+	if order.OrderId == 0 {
+		return customErrors.NewBadRequestErrorf("Order id %d not found", request.OrderId)
+	}
+	if order.Status != "pending" {
+		return customErrors.NewBadRequestErrorf("Payment order id %d cannot be made. Order status is %s", request.OrderId, order.Status)
 	}
 
 	return nil

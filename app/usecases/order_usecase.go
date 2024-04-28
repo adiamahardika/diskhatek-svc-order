@@ -10,6 +10,7 @@ type orderUsecase usecase
 
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context, request models.CreateOrderRequest) (models.CreateOrderRequest, error)
+	PaymentOrder(ctx context.Context, request models.CreateOrderRequest, id int) (models.CreateOrderRequest, error)
 }
 
 func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrderRequest) (models.CreateOrderRequest, error) {
@@ -42,7 +43,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 	}
 
 	tx := u.Options.Postgres.Begin()
-	order, err := u.Options.Repository.Order.CreatOrder(tx, orderReq)
+	order, err := u.Options.Repository.Order.CreateOrder(tx, orderReq)
 	if err != nil {
 		tx.Rollback()
 		return models.CreateOrderRequest{}, err
@@ -53,7 +54,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 		v.CreatedAt = now
 		v.UpdatedAt = now
 
-		orderItem, err = u.Options.Repository.OrderItem.CreatOrderItem(tx, v)
+		orderItem, err = u.Options.Repository.OrderItem.CreateOrderItem(tx, v)
 		if err != nil {
 			tx.Rollback()
 			return models.CreateOrderRequest{}, err
@@ -68,7 +69,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 			CreatedAt:             now,
 			UpdatedAt:             now,
 		}
-		_, err = u.Options.Repository.ReservedStock.CreatReservedStock(tx, resvStockReq)
+		_, err = u.Options.Repository.ReservedStock.CreateReservedStock(tx, resvStockReq)
 		if err != nil {
 			tx.Rollback()
 			return models.CreateOrderRequest{}, err
@@ -78,4 +79,48 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, request models.CreateOrd
 	tx.Commit()
 	response.Order = order
 	return response, nil
+}
+
+func (u *orderUsecase) PaymentOrder(ctx context.Context, request models.CreateOrderRequest, id int) (models.CreateOrderRequest, error) {
+	var (
+		err      error
+		response models.CreateOrderRequest
+	)
+
+	now := time.Now()
+	request.UpdatedAt = now
+	request.Status = "completed"
+
+	tx := u.Options.Postgres.Begin()
+	order, err := u.Options.Repository.Order.UpdateOrder(tx, request.Order, id)
+	if err != nil {
+		tx.Rollback()
+		return models.CreateOrderRequest{}, err
+	}
+
+	orderItems, err := u.Options.Repository.OrderItem.GetOrderItem(ctx, models.OrderItem{OrderId: id})
+	for _, v := range orderItems {
+		err = u.Options.Repository.Stock.ReduceStock(tx, models.Stock{
+			ProductId: v.ProductId,
+			Quantity:  v.Quantity,
+			UpdatedAt: now,
+		})
+		if err != nil {
+			tx.Rollback()
+			return models.CreateOrderRequest{}, err
+		}
+
+		err = u.Options.Repository.ReservedStock.DeleteReservedStock(tx, models.ReservedStock{
+			OrderItemId: v.OrderItemId,
+		})
+		if err != nil {
+			tx.Rollback()
+			return models.CreateOrderRequest{}, err
+		}
+	}
+
+	response.Order = order
+	response.OrderItem = orderItems
+	tx.Commit()
+	return response, err
 }
