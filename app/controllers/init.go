@@ -7,6 +7,7 @@ import (
 
 type Main struct {
 	Order OrderController
+	User  UserController
 }
 
 type controller struct {
@@ -23,6 +24,7 @@ func Init(opts Options) *Main {
 
 	m := &Main{
 		Order: (*orderController)(ctrlr),
+		User:  (*userController)(ctrlr),
 	}
 
 	return m

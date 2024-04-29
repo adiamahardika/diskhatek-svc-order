@@ -10,6 +10,7 @@ import (
 type Main struct {
 	Order    OrderUsecase
 	Validate ValidateUsecase
+	User     UserUsecase
 }
 
 type usecase struct {
@@ -28,6 +29,7 @@ func Init(opts Options) *Main {
 	m := &Main{
 		Order:    (*orderUsecase)(uscs),
 		Validate: (*validateUsecase)(uscs),
+		User:     (*userUsecase)(uscs),
 	}
 
 	return m

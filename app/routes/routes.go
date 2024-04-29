@@ -11,6 +11,7 @@ func Router(e *echo.Echo, controller *controllers.Main) {
 	{
 		order := v1.Group("/order")
 		{
+			order.Use(controller.User.Authentication())
 			order.POST("", controller.Order.Create)
 			order.POST("/payment", controller.Order.PaymentOrder)
 		}
